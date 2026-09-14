@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OmniFit — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1219;
+    --panel:#171B24;
+    --panel-2:#1C212C;
+    --line:rgba(255,255,255,0.07);
+    --text:#F1F3F7;
+    --dim:#8B93A6;
+    --dimmer:#5C6478;
+    --coral:#FF5C39;
+    --coral-dim:#3A2119;
+    --teal:#33D6B8;
+    --teal-dim:#122824;
+    --gold:#FFC14D;
+    --gold-dim:#2C230F;
+    --danger:#FF4D6D;
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:9px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    font-size:15px;
+    line-height:1.5;
+  }
+  h1,h2,h3,h4,.num{
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  ::selection{background:var(--coral);color:#fff;}
+
+  /* ---------- Layout shell ---------- */
+  .app{display:flex;min-height:100vh;}
+
+  .sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:#0C0E14;
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    padding:24px 16px;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:4px 8px 28px 8px;
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(135deg,var(--coral),#ff8a3d);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo';font-weight:900;font-size:16px;color:#0F1219;
+    flex-shrink:0;
+  }
+  .brand-name{font-family:'Archivo';font-weight:900;font-size:18px;letter-spacing:-0.02em;}
+
+  .navlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
+  .nav-group-label{font-size:11px;color:var(--dimmer);font-weight:600;padding:14px 12px 4px 12px;}
+  .navitem{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 12px;border-radius:var(--radius-sm);
+    color:var(--dim);font-weight:600;font-size:14px;
+    transition:background .15s ease,color .15s ease;
+  }
+  .navitem svg{flex-shrink:0;}
+  .navitem:hover{background:var(--panel);color:var(--text);}
+  .navitem.active{background:var(--panel-2);color:var(--text);}
+  .navitem.active .navdot{background:var(--coral);}
+  .navdot{width:6px;height:6px;border-radius:50%;background:transparent;margin-left:auto;}
+
+  .sidebar-foot{
+    margin-top:auto;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,var(--teal),#1a8f7c);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;color:#06201b;flex-shrink:0;
+  }
+  .sidebar-foot .who{font-size:13px;font-weight:600;}
+  .sidebar-foot .role{font-size:12px;color:var(--dimmer);}
+
+  .main{flex:1;min-width:0;}
+
+  .topbar{
+    position:sticky;top:0;z-index:10;
+    background:rgba(15,18,25,0.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:18px 32px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .greeting h1{font-size:21px;}
+  .greeting p{margin:2px 0 0 0;color:var(--dim);font-size:13.5px;}
+  .top-actions{display:flex;align-items:center;gap:14px;}
+  .streak-pill{
+    display:flex;align-items:center;gap:6px;
+    background:var(--gold-dim);color:var(--gold);
+    padding:7px 12px;border-radius:100px;font-weight:700;font-size:13px;
+  }
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;
+    background:var(--panel);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--dim);position:relative;
+  }
+  .icon-btn:hover{color:var(--text);}
+  .ping{
+    position:absolute;top:7px;right:8px;
+    width:7px;height:7px;border-radius:50%;background:var(--coral);
+    box-shadow:0 0 0 2px #0C0E14;
+  }
+
+  .view{display:none;padding:28px 32px 60px 32px;}
+  .view.active{display:block;}
+
+  /* ---------- Notification dropdown ---------- */
+  .notif-wrap{position:relative;}
+  .notif-panel{
+    position:absolute;right:0;top:48px;width:320px;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-md);
+    padding:8px;display:none;box-shadow:0 20px 40px rgba(0,0,0,0.4);
+    z-index:20;
+  }
+  .notif-panel.open{display:block;}
+  .notif-item{padding:11px 12px;border-radius:var(--radius-sm);display:flex;gap:10px;align-items:flex-start;}
+  .notif-item:hover{background:var(--panel-2);}
+  .notif-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+  .notif-item p{margin:0;font-size:13px;color:var(--text);}
+  .notif-item span{font-size:11.5px;color:var(--dimmer);}
+
+  /* ---------- Nudge banner ---------- */
+  .nudge{
+    display:flex;align-items:center;gap:14px;
+    background:linear-gradient(90deg,var(--coral-dim),#1c1f2a);
+    border:1px solid rgba(255,92,57,0.25);
+    border-radius:var(--radius-lg);
+    padding:16px 20px;margin-bottom:24px;
+  }
+  .nudge-icon{
+    width:42px;height:42px;border-radius:50%;flex-shrink:0;
+    background:rgba(255,92,57,0.15);color:var(--coral);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .nudge p{margin:0;font-size:14px;}
+  .nudge p b{color:var(--coral);}
+  .nudge small{color:var(--dim);}
+  .nudge-cta{
+    margin-left:auto;flex-shrink:0;
+    background:var(--coral);color:#1a0a05;font-weight:700;font-size:13px;
+    padding:9px 16px;border-radius:100px;border:none;
+  }
+  .nudge-close{background:none;border:none;color:var(--dimmer);font-size:16px;padding:4px;flex-shrink:0;}
+
+  /* ---------- Grid & cards ---------- */
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+  .grid-2-1{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:20px;align-items:start;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius-lg);padding:20px;
+  }
+  .card-flat{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px;}
+  .card-head{display:flex;align-items:center;justify-content:baseline;justify-content:space-between;margin-bottom:14px;}
+  .card-head h3{font-size:14.5px;color:var(--text);}
+  .card-head .link{font-size:12.5px;color:var(--dim);font-weight:600;}
+  .card-head .link:hover{color:var(--text);}
+
+  /* ring stat cards */
+  .stat-card{display:flex;align-items:center;gap:14px;}
+  .ring{
+    width:60px;height:60px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .ring::before{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(var(--ring-color) calc(var(--pct)*1%), var(--panel-2) 0);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));
+            mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));
+  }
+  .ring span{position:relative;z-index:1;font-size:14px;}
+  .stat-label{font-size:12.5px;color:var(--dim);font-weight:600;}
+  .stat-value{font-size:20px;margin-top:1px;}
+  .stat-sub{font-size:11.5px;color:var(--dimmer);margin-top:2px;}
+  .stat-sub.up{color:var(--teal);}
+  .stat-sub.down{color:var(--danger);}
+
+  /* weekly bars */
+  .bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding-top:10px;}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;}
+  .bar{width:100%;border-radius:6px 6px 3px 3px;background:var(--panel-2);position:relative;}
+  .bar.today{background:var(--coral);}
+  .bar-day{font-size:11.5px;color:var(--dimmer);font-weight:600;}
+  .bar-day.today{color:var(--coral);}
+
+  /* macro bars */
+  .macro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .macro-row:last-child{margin-bottom:0;}
+  .macro-label{width:64px;font-size:12.5px;color:var(--dim);font-weight:600;flex-shrink:0;}
+  .macro-track{flex:1;height:8px;border-radius:6px;background:var(--panel-2);overflow:hidden;}
+  .macro-fill{height:100%;border-radius:6px;}
+  .macro-val{width:56px;text-align:right;font-size:12.5px;color:var(--dimmer);flex-shrink:0;}
+
+  .cal-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:6px 0 14px 0;}
+  .cal-ring{
+    width:132px;height:132px;border-radius:50%;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--teal) calc(var(--cal-pct)*1%), var(--panel-2) 0);
+  }
+  .cal-ring::after{
+    content:"";position:absolute;inset:10px;border-radius:50%;background:var(--panel);
+  }
+  .cal-ring-inner{position:relative;z-index:1;text-align:center;}
+  .cal-ring-inner .num{font-size:26px;}
+  .cal-ring-inner span{font-size:11.5px;color:var(--dim);}
+
+  /* leaderboard mini */
+  .lb-row{display:flex;align-items:center;gap:12px;padding:9px 4px;border-radius:var(--radius-sm);}
+  .lb-row:hover{background:var(--panel-2);}
+  .lb-rank{width:20px;font-family:'Archivo';font-weight:800;font-size:14px;color:var(--dimmer);text-align:center;flex-shrink:0;}
+  .lb-rank.top{color:var(--gold);}
+  .lb-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0F1219;}
+  .lb-name{flex:1;font-size:13.5px;font-weight:600;min-width:0;}
+  .lb-name .you{color:var(--coral);}
+  .lb-pts{font-size:13px;color:var(--dim);font-weight:600;flex-shrink:0;}
+  .lb-delta{font-size:11px;font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+  .lb-delta.up{color:var(--teal);}
+  .lb-delta.down{color:var(--danger);}
+  .flag{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10px;color:var(--gold);background:var(--gold-dim);
+    padding:2px 7px;border-radius:100px;font-weight:700;margin-left:6px;flex-shrink:0;
+  }
+
+  /* quick actions */
+  .qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .qa-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-md);
+    padding:18px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s ease,transform .15s ease;
+  }
+  .qa-card:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-2px);}
+  .qa-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .qa-title{font-size:13.5px;font-weight:700;}
+  .qa-sub{font-size:12px;color:var(--dimmer);}
+
+  .section-title{font-size:22px;margin-bottom:4px;}
+  .section-sub{color:var(--dim);font-size:13.5px;margin-bottom:22px;}
+
+  /* ---------- Social / feed ---------- */
+  .feed-tabs{display:flex;gap:6px;margin-bottom:18px;}
+  .pill-tab{
+    padding:8px 15px;border-radius:100px;font-size:13px;font-weight:600;
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  }
+  .pill-tab.active{background:var(--panel-2);color:var(--text);border-color:rgba(255,255,255,0.18);}
+
+  .feed-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;}
+  .feed-top{display:flex;align-items:center;gap:10px;}
+  .feed-name{font-size:13.5px;font-weight:700;}
+  .feed-meta{font-size:12px;color:var(--dimmer);}
+  .feed-body{margin:14px 0;}
+  .feed-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+  .feed-stats{display:flex;gap:22px;margin-top:12px;}
+  .feed-stat b{font-family:'Archivo';font-size:16px;display:block;}
+  .feed-stat span{font-size:11px;color:var(--dimmer);}
+  .feed-actions{display:flex;align-items:center;gap:18px;padding-top:12px;border-top:1px solid var(--line);margin-top:14px;}
+  .feed-action{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);font-weight:600;}
+  .feed-action:hover{color:var(--text);}
+  .verified{color:var(--teal);}
+  .review{
+    display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--danger);
+    background:rgba(255,77,109,0.1);padding:3px 9px;border-radius:100px;font-weight:700;margin-left:8px;
+  }
+
+  .full-lb{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:8px 20px;}
+  .full-lb .lb-row{padding:13px 4px;border-bottom:1px solid var(--line);border-radius:0;}
+  .full-lb .lb-row:last-child{border-bottom:none;}
+
+  /* ---------- Workout / posture ---------- */
+  /* ---------- Workout / posture (legacy card mock, unused CSS pruned) ---------- */
+  .feedback-list{display:flex;flex-direction:column;gap:10px;}
+  .fb-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--panel-2);}
+  .fb-item.warn{background:rgba(255,193,77,0.08);}
+  .fb-icon{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .fb-text b{display:block;font-size:13px;}
+  .fb-text span{font-size:12px;color:var(--dim);}
+  .rep-count{display:flex;align-items:baseline;gap:8px;margin-bottom:16px;}
+  .rep-count .num{font-size:44px;line-height:1;}
+  .rep-count .lbl{color:var(--dim);font-size:13px;}
+
+  .ex-list{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+  .ex-row{display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:var(--radius-md);background:var(--panel);border:1px solid var(--line);}
+  .ex-icon{width:38px;height:38px;border-radius:10px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ex-name{font-weight:700;font-size:13.5px;}
+  .ex-sub{font-size:12px;color:var(--dimmer);}
+  .ex-btn{margin-left:auto;background:var(--panel-2);border:1px solid var(--line);color:var(--text);font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:100px;flex-shrink:0;}
+  .ex-btn:hover{border-color:var(--coral);color:var(--coral);}
+
+  /* ---------- Diet AI ---------- */
+  .ingredient-picker{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 18px 0;}
+  .ing-chip{
+    display:flex;align-items:center;gap:8px;padding:9px 14px 9px 10px;border-radius:100px;
+    background:var(--panel-2);border:1px solid var(--line);font-size:13px;font-weight:600;
+  }
+  .ing-chip.selected{border-color:var(--teal);color:var(--teal);background:var(--teal-dim);}
+  .ing-emoji{font-size:16px;}
+  .gen-btn{
+    background:var(--coral);color:#1a0a05;font-weight:700;font-size:13.5px;border:none;
+    padding:12px 22px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;
+  }
+  .gen-btn:disabled{opacity:0.5;cursor:default;}
+
+  .recipe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px;}
+  .recipe-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;}
+  .recipe-emoji{width:48px;height:48px;border-radius:14px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;}
+  .recipe-name{font-size:15px;font-weight:700;margin-bottom:4px;}
+  .recipe-desc{font-size:12.5px;color:var(--dim);margin-bottom:14px;}
+  .recipe-macros{display:flex;gap:14px;padding-top:12px;border-top:1px solid var(--line);}
+  .recipe-macros div{text-align:left;}
+  .recipe-macros b{display:block;font-family:'Archivo';font-size:15px;}
+  .recipe-macros span{font-size:10.5px;color:var(--dimmer);}
+
+  /* ---------- Posture correction (real pose detection) ---------- */
+  .pose-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .pose-btn{
+    background:var(--panel-2);color:var(--dim);border:1px solid var(--line);
+    padding:9px 16px;border-radius:100px;font-size:13px;font-weight:700;
+  }
+  .pose-btn.active{background:var(--teal);color:#06201b;border-color:var(--teal);}
+  .instruction-text{
+    background:var(--gold-dim);color:var(--gold);border-radius:var(--radius-sm);
+    padding:10px 14px;font-size:13px;margin-bottom:16px;
+  }
+  .workout-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;}
+  .stage-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px;}
+  .stage{position:relative;width:100%;aspect-ratio:4/3;border-radius:var(--radius-md);overflow:hidden;background:#050608;}
+  .stage video,.stage canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+  .stage-empty{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;text-align:center;padding:0 30px;color:var(--dim);font-size:13px;z-index:2;background:#050608;
+  }
+  .stage-empty.hidden{display:none;}
+  #startBtn{width:100%;margin-top:14px;}
+  #startBtn:disabled{background:var(--panel-2);color:var(--dimmer);}
+  #status{margin-top:10px;text-align:center;font-size:12.5px;color:var(--dimmer);}
+  .hud-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+  .hud-cards .card-flat{text-align:center;padding:14px 8px;}
+  .hud-cards .stat-label{font-size:10.5px;}
+  .hud-cards .num{font-size:22px;margin-top:2px;}
+  #feedback.good{color:var(--teal);}
+  #feedback.bad{color:var(--danger);}
+
+  .alert-toggle-row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 4px 0;}
+  .alert-toggle{
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel-2);border:1px solid var(--line);
+    border-radius:100px;padding:8px 14px;font-size:13px;color:var(--dim);
+    cursor:pointer;user-select:none;
+  }
+  .alert-toggle input{accent-color:var(--coral);width:15px;height:15px;cursor:pointer;}
+  .alert-toggle:has(input:checked){color:var(--text);border-color:rgba(255,92,57,0.35);}
+  .injury-text{font-size:12.5px;color:var(--dim);margin:0 0 12px 0;}
+  .injury-warn{
+    display:flex;align-items:flex-start;gap:8px;background:rgba(255,77,109,0.1);
+    border-radius:var(--radius-sm);padding:10px 12px;font-size:12.5px;color:var(--danger);font-weight:600;
+  }
+  #logSessionBtn{width:100%;margin-top:14px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:12px;border-radius:100px;font-weight:700;font-size:13px;}
+  #logSessionBtn:disabled{color:var(--dimmer);}
+  #logSessionBtn:not(:disabled):hover{border-color:var(--coral);color:var(--coral);}
+  .session-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);font-size:13px;}
+  .session-row:last-child{border-bottom:none;}
+  .session-row .s-name{font-weight:700;flex:1;}
+  .session-row .s-meta{color:var(--dimmer);font-size:12px;}
+  .empty-note{color:var(--dimmer);font-size:12.5px;padding:6px 4px;}
+
+  /* ---------- Forms (calorie calc, exercise log, wellness) ---------- */
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12.5px;color:var(--dim);font-weight:600;}
+  .field input,.field select,.field textarea{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);
+    color:var(--text);padding:10px 12px;font-size:13.5px;font-family:'Inter';
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--teal);}
+  .field-row-3{display:flex;gap:10px;}
+  .field-row-3 .field{flex:1;}
+  .segmented{display:flex;gap:8px;}
+  .seg-btn{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--dim);padding:9px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;}
+  .seg-btn.active{background:var(--teal-dim);color:var(--teal);border-color:var(--teal);}
+  .calc-btn{background:var(--coral);color:#1a0a05;font-weight:700;border:none;padding:12px 22px;border-radius:100px;font-size:13.5px;margin-top:16px;}
+  .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px;}
+  .result-card{background:var(--panel-2);border-radius:var(--radius-md);padding:16px;text-align:center;}
+  .result-card .num{font-size:24px;}
+  .result-card span{font-size:11px;color:var(--dimmer);}
+
+  /* ---------- Step tracker ---------- */
+  .step-hero{display:flex;align-items:center;gap:24px;}
+  .step-ring-big{
+    width:150px;height:150px;border-radius:50%;flex-shrink:0;position:relative;
+    background:conic-gradient(var(--coral) calc(var(--step-pct)*1%), var(--panel-2) 0);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step-ring-big::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--panel);}
+  .step-ring-inner{position:relative;z-index:1;text-align:center;}
+  .step-ring-inner .num{font-size:28px;}
+  .step-ring-inner span{font-size:11.5px;color:var(--dim);}
+  .step-actions{display:flex;gap:10px;margin-top:16px;}
+  .step-actions button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:9px 16px;border-radius:100px;font-size:12.5px;font-weight:700;}
+  .step-actions button:hover{border-color:var(--coral);color:var(--coral);}
+
+  /* ---------- Wellness check-in ---------- */
+  .mood-row{display:flex;gap:10px;margin-bottom:20px;}
+  .mood-btn{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-md);
+    padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);font-weight:600;
+  }
+  .mood-btn .emoji{font-size:24px;}
+  .mood-btn.active{border-color:var(--teal);background:var(--teal-dim);color:var(--teal);}
+  .slider-row{margin-bottom:18px;}
+  .slider-row .field-top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim);font-weight:600;margin-bottom:8px;}
+  .slider-row .field-top b{color:var(--text);}
+  input[type="range"]{width:100%;accent-color:var(--teal);}
+  .checkin-row{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-bottom:1px solid var(--line);}
+  .checkin-row:last-child{border-bottom:none;}
+  .checkin-emoji{font-size:20px;flex-shrink:0;}
+  .checkin-meta{font-size:11.5px;color:var(--dimmer);margin-bottom:2px;}
+  .checkin-note{font-size:13px;color:var(--dim);}
+
+  /* ---------- Monthly report ---------- */
+  .month-bars{display:flex;align-items:flex-end;gap:16px;height:140px;padding-top:10px;}
+  .month-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;}
+  .month-bar{width:100%;border-radius:6px 6px 3px 3px;background:var(--teal);}
+  .month-lbl{font-size:11.5px;color:var(--dimmer);font-weight:600;}
+  .badge-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .badge-pill{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:100px;padding:8px 14px 8px 10px;font-size:12.5px;font-weight:600;}
+  .badge-pill .b-emoji{font-size:16px;}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:1100px){
+    .grid-4{grid-template-columns:repeat(2,1fr);}
+    .grid-2-1{grid-template-columns:1fr;}
+    .qa-grid{grid-template-columns:repeat(2,1fr);}
+    .posture-wrap{grid-template-columns:1fr;}
+    .recipe-grid{grid-template-columns:1fr;}
+    .sidebar{width:76px;}
+    .brand-name,.navitem span.label,.sidebar-foot .who,.sidebar-foot .role,.nav-group-label{display:none;}
+    .navitem{justify-content:center;}
+    .sidebar-foot{justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">O</div>
+      <div class="brand-name">OmniFit</div>
+    </div>
+    <ul class="navlist">
+      <li class="navitem active" data-view="dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+        <span class="label">Dashboard</span><span class="navdot"></span>
+      </li>
+      <li class="navitem" data-view="social">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="label">Social &amp; Leaderboard</span><span class="navdot"></span>
+      </li>
+
+      <div class="nav-group-label">train</div>
+      <li class="navitem" data-view="workout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1M4 4l-1-1"/><path d="M3.5 15.5l5-5M15.5 3.5l5 5"/><path d="M18 6l-3 3M9 15l-3 3"/></svg>
+        <span class="label">Workout &amp; Posture</span><span class="navdot"></span>
+      </li>
+      <li class="navitem" data-view="exercise">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        <span class="label">Exercise Tracker</span><span class="navdot"></span>
+      </li>
+      <li class="navitem" data-view="steps">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4v6H4zM16 8h4v6h-4zM4 16h4v4H4zM16 18h4v2h-4"/></svg>
+        <span class="label">Step Tracker</span><span class="navdot"></span>
+      </li>
+
+      <div class="nav-group-label">nutrition</div>
+      <li class="navitem" data-view="diet">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M5 12v10"/><path d="M17 2c-1.5 2-2 4-2 7 0 2 1 3 2 3s2-1 2-3c0-3-.5-5-2-7z"/><path d="M17 12v10"/></svg>
+        <span class="label">Diet AI Chef</span><span class="navdot"></span>
+      </li>
+      <li class="navitem" data-view="calorie">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.4"/></svg>
+        <span class="label">Calorie Calculator</span><span class="navdot"></span>
+      </li>
+
+      <div class="nav-group-label">mind &amp; progress</div>
+      <li class="navitem" data-view="wellness">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+        <span class="label">Wellness Check-in</span><span class="navdot"></span>
+      </li>
+      <li class="navitem" data-view="report">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        <span class="label">Monthly Report</span><span class="navdot"></span>
+      </li>
+    </ul>
+    <div class="sidebar-foot">
+      <div class="avatar">AR</div>
+      <div>
+        <div class="who">Arjun Rao</div>
+        <div class="role">Hostel Block C · Streak 14d</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="greeting">
+        <h1>Good morning, Arjun</h1>
+        <p>Tuesday, Sep 8 &middot; You're 320 pts behind Rohit this week</p>
+      </div>
+      <div class="top-actions">
+        <div class="streak-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.5-2-.5-2 1.5 1 2.5 3 2.5 5a5 5 0 0 1-10 0c0-5 4-6 5-12z"/></svg>
+          14 day streak
+        </div>
+        <div class="notif-wrap">
+          <button class="icon-btn" id="bellBtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="ping"></span>
+          </button>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-item">
+              <div class="notif-dot" style="background:var(--coral)"></div>
+              <div><p><b>Rohit</b> just passed you on the Block C leaderboard.</p><span>4 min ago</span></div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-dot" style="background:var(--gold)"></div>
+              <div><p>You haven't logged a workout in 2 days — a 5-min mobility break keeps your streak alive.</p><span>1 hr ago</span></div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-dot" style="background:var(--teal)"></div>
+              <div><p>Your posture score improved 8% this week. Nice form on squats.</p><span>Yesterday</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="avatar" style="width:38px;height:38px;">AR</div>
+      </div>
+    </header>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="view active" id="view-dashboard">
+
+      <div class="nudge" id="nudgeBanner">
+        <div class="nudge-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <p><b>Catch up alert:</b> Rohit logged a 6.2 km run 20 min ago and took the #1 spot in Block C. Close the gap before midnight. <br><small>Weekly reset in 1d 6h</small></p>
+        <button class="nudge-cta" onclick="showView('social')">View leaderboard</button>
+        <button class="nudge-close" onclick="document.getElementById('nudgeBanner').style.display='none'">✕</button>
+      </div>
+
+      <div class="grid-4">
+        <div class="card stat-card">
+          <div class="ring" style="--pct:78;--ring-color:var(--coral);"><span>78%</span></div>
+          <div>
+            <div class="stat-label">Steps</div>
+            <div class="stat-value">9,340</div>
+            <div class="stat-sub">of 12,000 goal</div>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="ring" style="--pct:64;--ring-color:var(--teal);"><span>64%</span></div>
+          <div>
+            <div class="stat-label">Calories burned</div>
+            <div class="stat-value">512</div>
+            <div class="stat-sub up">▲ 12% vs avg</div>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="ring" style="--pct:45;--ring-color:var(--gold);"><span>45%</span></div>
+          <div>
+            <div class="stat-label">Active minutes</div>
+            <div class="stat-value">27 min</div>
+            <div class="stat-sub">of 60 min goal</div>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="ring" style="--pct:88;--ring-color:#7C8CFF;"><span>7h6m</span></div>
+          <div>
+            <div class="stat-label">Sleep</div>
+            <div class="stat-value">Good</div>
+            <div class="stat-sub down">▼ 40m vs avg</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head">
+            <h3>This week's activity</h3>
+            <span class="link">Steps · Calories ▾</span>
+          </div>
+          <div class="bars">
+            <div class="bar-col"><div class="bar" style="height:52%"></div><div class="bar-day">Mon</div></div>
+            <div class="bar-col"><div class="bar" style="height:71%"></div><div class="bar-day">Tue</div></div>
+            <div class="bar-col"><div class="bar" style="height:38%"></div><div class="bar-day">Wed</div></div>
+            <div class="bar-col"><div class="bar" style="height:85%"></div><div class="bar-day">Thu</div></div>
+            <div class="bar-col"><div class="bar" style="height:60%"></div><div class="bar-day">Fri</div></div>
+            <div class="bar-col"><div class="bar" style="height:94%"></div><div class="bar-day">Sat</div></div>
+            <div class="bar-col"><div class="bar today" style="height:78%"></div><div class="bar-day today">Today</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Calories today</h3>
+            <span class="link">Edit goal</span>
+          </div>
+          <div class="cal-ring-wrap">
+            <div class="cal-ring" style="--cal-pct:71">
+              <div class="cal-ring-inner"><div class="num">1,420</div><span>of 2,000 kcal</span></div>
+            </div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-label">Protein</div>
+            <div class="macro-track"><div class="macro-fill" style="width:80%;background:var(--coral)"></div></div>
+            <div class="macro-val">96/120g</div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-label">Carbs</div>
+            <div class="macro-track"><div class="macro-fill" style="width:55%;background:var(--teal)"></div></div>
+            <div class="macro-val">140/250g</div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-label">Fat</div>
+            <div class="macro-track"><div class="macro-fill" style="width:40%;background:var(--gold)"></div></div>
+            <div class="macro-val">28/70g</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head">
+            <h3>Block C leaderboard — this week</h3>
+            <span class="link" onclick="showView('social')" style="cursor:pointer">View full ▸</span>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank top">1</div>
+            <div class="lb-avatar" style="background:var(--gold)">RS</div>
+            <div class="lb-name">Rohit Sharma</div>
+            <div class="lb-pts">2,140 pts</div>
+            <div class="lb-delta up">▲2</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank top">2</div>
+            <div class="lb-avatar" style="background:#B9C0CE">PV</div>
+            <div class="lb-name">Priya Verma <span class="flag">⚑ reviewed</span></div>
+            <div class="lb-pts">2,050 pts</div>
+            <div class="lb-delta down">▼1</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank top">3</div>
+            <div class="lb-avatar" style="background:#CD8A55">MK</div>
+            <div class="lb-name">Manav Khatri</div>
+            <div class="lb-pts">1,980 pts</div>
+            <div class="lb-delta up">▲1</div>
+          </div>
+          <div class="lb-row" style="background:var(--coral-dim);border-radius:var(--radius-sm);">
+            <div class="lb-rank">4</div>
+            <div class="lb-avatar" style="background:var(--coral)">AR</div>
+            <div class="lb-name">You</div>
+            <div class="lb-pts">1,820 pts</div>
+            <div class="lb-delta down">▼1</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Quick log</h3></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="ex-row" style="width:100%;border:1px solid var(--line);text-align:left;" onclick="showView('workout')">
+              <div class="ex-icon" style="color:var(--coral)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11M3.5 15.5l5-5M15.5 3.5l5 5"/></svg></div>
+              <div><div class="ex-name">Start posture check</div><div class="ex-sub">AI camera form review</div></div>
+            </button>
+            <button class="ex-row" style="width:100%;border:1px solid var(--line);text-align:left;" onclick="showView('diet')">
+              <div class="ex-icon" style="color:var(--teal)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div>
+              <div><div class="ex-name">Scan a meal</div><div class="ex-sub">Generate a recipe from ingredients</div></div>
+            </button>
+            <button class="ex-row" style="width:100%;border:1px solid var(--line);text-align:left;" onclick="showView('social')">
+              <div class="ex-icon" style="color:var(--gold)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div>
+              <div><div class="ex-name">Log an activity</div><div class="ex-sub">Run, cycle, walk, or gym session</div></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SOCIAL / LEADERBOARD ===================== -->
+    <section class="view" id="view-social">
+      <h2 class="section-title">Social &amp; Leaderboard</h2>
+      <p class="section-sub">Compete with your hostel block, follow friends, and keep each other honest.</p>
+
+      <div class="feed-tabs">
+        <div class="pill-tab active" data-tab="feed">Activity feed</div>
+        <div class="pill-tab" data-tab="leaderboard">Leaderboard</div>
+      </div>
+
+      <div id="tab-feed">
+        <div class="feed-card">
+          <div class="feed-top">
+            <div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,var(--gold),#c98f1f);color:#241a05;">RS</div>
+            <div>
+              <div class="feed-name">Rohit Sharma <span class="verified">✓ verified</span></div>
+              <div class="feed-meta">2 hours ago · Block C</div>
+            </div>
+          </div>
+          <div class="feed-body">
+            <div class="feed-title">Morning Run — Hostel Loop</div>
+            <div class="feed-stats">
+              <div class="feed-stat"><b>6.2 km</b><span>DISTANCE</span></div>
+              <div class="feed-stat"><b>28:14</b><span>TIME</span></div>
+              <div class="feed-stat"><b>4:33/km</b><span>PACE</span></div>
+              <div class="feed-stat"><b>412</b><span>KCAL</span></div>
+            </div>
+          </div>
+          <div class="feed-actions">
+            <div class="feed-action">👏 <span>24 kudos</span></div>
+            <div class="feed-action">💬 <span>3 comments</span></div>
+            <div class="feed-action">↗ <span>Share</span></div>
+          </div>
+        </div>
+
+        <div class="feed-card">
+          <div class="feed-top">
+            <div class="avatar" style="width:36px;height:36px;background:#B9C0CE;color:#1b1e26;">PV</div>
+            <div>
+              <div class="feed-name">Priya Verma <span class="review">⚑ under review</span></div>
+              <div class="feed-meta">5 hours ago · Block C</div>
+            </div>
+          </div>
+          <div class="feed-body">
+            <div class="feed-title">Evening Cycle — Ring Road</div>
+            <div class="feed-stats">
+              <div class="feed-stat"><b>14.8 km</b><span>DISTANCE</span></div>
+              <div class="feed-stat"><b>41:02</b><span>TIME</span></div>
+              <div class="feed-stat"><b>310</b><span>KCAL</span></div>
+            </div>
+            <p style="font-size:12px;color:var(--dimmer);margin-top:10px;">OmniFit flagged overlapping GPS points with an activity logged 6 minutes earlier — likely a duplicate. Points are on hold pending auto-verification.</p>
+          </div>
+          <div class="feed-actions">
+            <div class="feed-action">👏 <span>9 kudos</span></div>
+            <div class="feed-action">💬 <span>1 comment</span></div>
+            <div class="feed-action">↗ <span>Share</span></div>
+          </div>
+        </div>
+
+        <div class="feed-card">
+          <div class="feed-top">
+            <div class="avatar" style="width:36px;height:36px;background:var(--coral);color:#1a0a05;">AR</div>
+            <div>
+              <div class="feed-name">You <span class="verified">✓ verified</span></div>
+              <div class="feed-meta">Yesterday · Block C</div>
+            </div>
+          </div>
+          <div class="feed-body">
+            <div class="feed-title">Leg Day — Posture Checked</div>
+            <div class="feed-stats">
+              <div class="feed-stat"><b>42 min</b><span>DURATION</span></div>
+              <div class="feed-stat"><b>96%</b><span>FORM SCORE</span></div>
+              <div class="feed-stat"><b>318</b><span>KCAL</span></div>
+            </div>
+          </div>
+          <div class="feed-actions">
+            <div class="feed-action">👏 <span>17 kudos</span></div>
+            <div class="feed-action">💬 <span>2 comments</span></div>
+            <div class="feed-action">↗ <span>Share</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-leaderboard" class="hidden">
+        <div class="full-lb">
+          <div class="lb-row">
+            <div class="lb-rank top">1</div>
+            <div class="lb-avatar" style="background:var(--gold)">RS</div>
+            <div class="lb-name">Rohit Sharma</div>
+            <div class="lb-pts">2,140 pts</div>
+            <div class="lb-delta up">▲2</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank top">2</div>
+            <div class="lb-avatar" style="background:#B9C0CE">PV</div>
+            <div class="lb-name">Priya Verma <span class="flag">⚑ reviewed</span></div>
+            <div class="lb-pts">2,050 pts</div>
+            <div class="lb-delta down">▼1</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank top">3</div>
+            <div class="lb-avatar" style="background:#CD8A55">MK</div>
+            <div class="lb-name">Manav Khatri</div>
+            <div class="lb-pts">1,980 pts</div>
+            <div class="lb-delta up">▲1</div>
+          </div>
+          <div class="lb-row" style="background:var(--coral-dim);">
+            <div class="lb-rank">4</div>
+            <div class="lb-avatar" style="background:var(--coral)">AR</div>
+            <div class="lb-name">You</div>
+            <div class="lb-pts">1,820 pts</div>
+            <div class="lb-delta down">▼1</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank">5</div>
+            <div class="lb-avatar" style="background:#5C6478">SN</div>
+            <div class="lb-name">Sneha Nair</div>
+            <div class="lb-pts">1,760 pts</div>
+            <div class="lb-delta up">▲3</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank">6</div>
+            <div class="lb-avatar" style="background:#5C6478">KJ</div>
+            <div class="lb-name">Karan Joshi</div>
+            <div class="lb-pts">1,690 pts</div>
+            <div class="lb-delta down">▼2</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank">7</div>
+            <div class="lb-avatar" style="background:#5C6478">DT</div>
+            <div class="lb-name">Divya Thakur <span class="review">⚑ duplicate</span></div>
+            <div class="lb-pts">1,540 pts</div>
+            <div class="lb-delta down">▼1</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--dimmer);margin-top:14px;">Flagged entries are held out of ranking totals until OmniFit's duplicate-detection check confirms GPS, timestamp, and sensor data don't overlap with an existing log.</p>
+      </div>
+    </section>
+
+    <!-- ===================== WORKOUT / POSTURE ===================== -->
+    <section class="view" id="view-workout">
+      <h2 class="section-title">Workout &amp; Posture Correction</h2>
+      <p class="section-sub">Real-time camera-based pose detection, running in your browser — pick an exercise, start the camera, and get live rep counts, hold timers, and form feedback.</p>
+
+      <div class="pose-picker" id="exercisePicker">
+        <button class="pose-btn active" data-ex="squat">Squat</button>
+        <button class="pose-btn" data-ex="pushup">Push-up</button>
+        <button class="pose-btn" data-ex="plank">Plank</button>
+        <button class="pose-btn" data-ex="lunge">Lunge</button>
+        <button class="pose-btn" data-ex="bicepcurl">Bicep Curl</button>
+        <button class="pose-btn" data-ex="sideplank">Side Plank</button>
+      </div>
+      <div id="instruction" class="instruction-text"></div>
+
+      <div class="alert-toggle-row" id="alertToggleRow">
+        <label class="alert-toggle"><input type="checkbox" id="soundAlertToggle" checked> <span>🔊 Beep on bad form</span></label>
+        <label class="alert-toggle"><input type="checkbox" id="voiceAlertToggle" checked> <span>🗣️ Voice cue on bad form</span></label>
+      </div>
+
+      <div class="workout-grid">
+        <div class="stage-card">
+          <div class="stage" id="stage">
+            <video id="video" playsinline autoplay muted></video>
+            <canvas id="canvas"></canvas>
+            <div class="stage-empty" id="stageEmpty">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5C6478" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              <span>Start the camera to begin live pose tracking.</span>
+            </div>
+          </div>
+          <button id="startBtn">Start camera</button>
+          <div id="status">Pick an exercise above, then click Start camera and allow webcam access.</div>
+        </div>
+
+        <div>
+          <div class="hud-cards">
+            <div class="card-flat"><div class="stat-label" id="metricLabel">Reps</div><div class="num" id="metricVal">0</div></div>
+            <div class="card-flat"><div class="stat-label">Angle</div><div class="num" id="angleVal">--</div></div>
+            <div class="card-flat"><div class="stat-label">Form</div><div class="num" id="feedback">--</div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Injury guidance</h3></div>
+            <p class="injury-text" id="injuryTip"></p>
+            <div class="injury-warn hidden" id="injuryWarn">
+              <span>⚠</span><span id="injuryWarnText"></span>
+            </div>
+          </div>
+
+          <button id="logSessionBtn" disabled>Log this session to Exercise Tracker</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-head"><h3>Today's posture sessions</h3></div>
+        <div id="sessionLogList"><div class="empty-note">No sessions logged yet — finish a set and log it above.</div></div>
+      </div>
+    </section>
+
+    <!-- ===================== EXERCISE TRACKER ===================== -->
+    <section class="view" id="view-exercise">
+      <h2 class="section-title">Exercise Tracker</h2>
+      <p class="section-sub">Log workouts manually, or they'll appear automatically from AI posture sessions.</p>
+
+      <div class="card">
+        <div class="card-head"><h3>Add an entry</h3></div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="exNameInput">Exercise</label>
+            <input type="text" id="exNameInput" placeholder="e.g. Cycling, Yoga, Gym session">
+          </div>
+          <div class="field">
+            <label for="exDurationInput">Duration (minutes)</label>
+            <input type="number" id="exDurationInput" placeholder="30" min="1">
+          </div>
+          <div class="field">
+            <label for="exCaloriesInput">Estimated calories (optional)</label>
+            <input type="number" id="exCaloriesInput" placeholder="Auto-estimated if left blank" min="0">
+          </div>
+          <div class="field">
+            <label for="exIntensityInput">Intensity</label>
+            <select id="exIntensityInput">
+              <option value="light">Light</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="vigorous">Vigorous</option>
+            </select>
+          </div>
+        </div>
+        <button class="calc-btn" id="addExerciseBtn">Add to today's log</button>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-head">
+          <h3>Today's exercise log</h3>
+          <span class="link" id="exerciseTotals">0 min · 0 kcal</span>
+        </div>
+        <div id="exerciseLogList"><div class="empty-note">Nothing logged yet today.</div></div>
+      </div>
+    </section>
+
+    <!-- ===================== STEP TRACKER ===================== -->
+    <section class="view" id="view-steps">
+      <h2 class="section-title">Step Tracker</h2>
+      <p class="section-sub">Synced from your phone or wearable's motion sensors.</p>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head"><h3>Today</h3></div>
+          <div class="step-hero">
+            <div class="step-ring-big" id="stepRing" style="--step-pct:62">
+              <div class="step-ring-inner"><div class="num" id="stepCountDisplay">6,200</div><span>of 10,000 steps</span></div>
+            </div>
+            <div>
+              <div class="stat-label">Distance</div>
+              <div class="stat-value" id="stepDistance">4.3 km</div>
+              <div class="stat-sub" style="margin-top:10px;">Est. calories from steps</div>
+              <div class="stat-value" id="stepCalories">248 kcal</div>
+            </div>
+          </div>
+          <div class="step-actions">
+            <button id="addStepsBtn">+ Sync 500 steps</button>
+            <button id="resetStepsBtn">Reset today</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>This week</h3></div>
+          <div class="bars" id="stepWeekBars">
+            <div class="bar-col"><div class="bar" style="height:58%"></div><div class="bar-day">Mon</div></div>
+            <div class="bar-col"><div class="bar" style="height:74%"></div><div class="bar-day">Tue</div></div>
+            <div class="bar-col"><div class="bar" style="height:40%"></div><div class="bar-day">Wed</div></div>
+            <div class="bar-col"><div class="bar" style="height:88%"></div><div class="bar-day">Thu</div></div>
+            <div class="bar-col"><div class="bar" style="height:65%"></div><div class="bar-day">Fri</div></div>
+            <div class="bar-col"><div class="bar" style="height:96%"></div><div class="bar-day">Sat</div></div>
+            <div class="bar-col"><div class="bar today" id="todayStepBar" style="height:62%"></div><div class="bar-day today">Today</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DIET AI ===================== -->
+    <section class="view" id="view-diet">
+      <h2 class="section-title">Diet AI Chef</h2>
+      <p class="section-sub">Tell OmniFit what you've got, and it builds a meal around it.</p>
+
+      <div class="card">
+        <div class="card-head"><h3>What's in your kitchen right now?</h3></div>
+        <div class="ingredient-picker" id="ingredientPicker">
+          <div class="ing-chip selected" data-ing="egg"><span class="ing-emoji">🥚</span>Eggs</div>
+          <div class="ing-chip selected" data-ing="spinach"><span class="ing-emoji">🥬</span>Spinach</div>
+          <div class="ing-chip" data-ing="chicken"><span class="ing-emoji">🍗</span>Chicken</div>
+          <div class="ing-chip selected" data-ing="tomato"><span class="ing-emoji">🍅</span>Tomato</div>
+          <div class="ing-chip" data-ing="rice"><span class="ing-emoji">🍚</span>Rice</div>
+          <div class="ing-chip" data-ing="paneer"><span class="ing-emoji">🧀</span>Paneer</div>
+          <div class="ing-chip selected" data-ing="onion"><span class="ing-emoji">🧅</span>Onion</div>
+          <div class="ing-chip" data-ing="oats"><span class="ing-emoji">🥣</span>Oats</div>
+        </div>
+        <button class="gen-btn" id="genBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z"/></svg>
+          Generate meal ideas
+        </button>
+      </div>
+
+      <div class="recipe-grid" id="recipeGrid">
+        <div class="recipe-card">
+          <div class="recipe-emoji">🍳</div>
+          <div class="recipe-name">Spinach &amp; Tomato Egg Bhurji</div>
+          <div class="recipe-desc">Fluffy scrambled eggs folded with wilted spinach, onion, and blistered tomato. Ready in 12 minutes.</div>
+          <div class="recipe-macros">
+            <div><b>310</b><span>KCAL</span></div>
+            <div><b>22g</b><span>PROTEIN</span></div>
+            <div><b>9g</b><span>CARBS</span></div>
+          </div>
+        </div>
+        <div class="recipe-card">
+          <div class="recipe-emoji">🥗</div>
+          <div class="recipe-name">Warm Tomato &amp; Onion Salad</div>
+          <div class="recipe-desc">A light, high-volume side to pair with any protein — good post-workout hydration and fibre.</div>
+          <div class="recipe-macros">
+            <div><b>90</b><span>KCAL</span></div>
+            <div><b>3g</b><span>PROTEIN</span></div>
+            <div><b>14g</b><span>CARBS</span></div>
+          </div>
+        </div>
+        <div class="recipe-card">
+          <div class="recipe-emoji">🌯</div>
+          <div class="recipe-name">Spinach-Egg Wrap</div>
+          <div class="recipe-desc">Rolled egg-spinach omelette, sliced thin — a fast, portable option between classes or workouts.</div>
+          <div class="recipe-macros">
+            <div><b>275</b><span>KCAL</span></div>
+            <div><b>19g</b><span>PROTEIN</span></div>
+            <div><b>12g</b><span>CARBS</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CALORIE CALCULATOR ===================== -->
+    <section class="view" id="view-calorie">
+      <h2 class="section-title">Calorie Calculator</h2>
+      <p class="section-sub">Estimate your daily energy needs using the Mifflin-St Jeor formula.</p>
+
+      <div class="card">
+        <div class="card-head"><h3>Your details</h3></div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Sex</label>
+          <div class="segmented">
+            <button class="seg-btn active" data-sex="male">Male</button>
+            <button class="seg-btn" data-sex="female">Female</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="ageInput">Age (years)</label>
+            <input type="number" id="ageInput" value="21" min="10" max="90">
+          </div>
+          <div class="field">
+            <label for="heightInput">Height (cm)</label>
+            <input type="number" id="heightInput" value="172" min="120" max="230">
+          </div>
+          <div class="field">
+            <label for="weightInput">Weight (kg)</label>
+            <input type="number" id="weightInput" value="66" min="30" max="200">
+          </div>
+          <div class="field">
+            <label for="activityInput">Activity level</label>
+            <select id="activityInput">
+              <option value="1.2">Sedentary (little/no exercise)</option>
+              <option value="1.375" selected>Light (1–3 days/week)</option>
+              <option value="1.55">Moderate (3–5 days/week)</option>
+              <option value="1.725">Active (6–7 days/week)</option>
+              <option value="1.9">Very active (physical job + training)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Goal</label>
+          <div class="segmented">
+            <button class="seg-btn" data-goal="-500">Lose weight</button>
+            <button class="seg-btn active" data-goal="0">Maintain</button>
+            <button class="seg-btn" data-goal="300">Gain muscle</button>
+          </div>
+        </div>
+        <button class="calc-btn" id="calcCalorieBtn">Calculate</button>
+
+        <div class="result-grid" id="calorieResults">
+          <div class="result-card"><div class="num" id="bmrResult">—</div><span>BMR (kcal/day)</span></div>
+          <div class="result-card"><div class="num" id="tdeeResult">—</div><span>MAINTENANCE (kcal/day)</span></div>
+          <div class="result-card"><div class="num" id="targetResult">—</div><span>TARGET FOR YOUR GOAL</span></div>
+        </div>
+        <div class="card-flat" style="margin-top:16px;display:none;" id="macroSuggestion">
+          <div class="stat-label" style="margin-bottom:12px;">Suggested macro split (30% protein / 40% carbs / 30% fat)</div>
+          <div class="macro-row">
+            <div class="macro-label">Protein</div>
+            <div class="macro-track"><div class="macro-fill" style="width:100%;background:var(--coral)"></div></div>
+            <div class="macro-val" id="macroProtein">—</div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-label">Carbs</div>
+            <div class="macro-track"><div class="macro-fill" style="width:100%;background:var(--teal)"></div></div>
+            <div class="macro-val" id="macroCarbs">—</div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-label">Fat</div>
+            <div class="macro-track"><div class="macro-fill" style="width:100%;background:var(--gold)"></div></div>
+            <div class="macro-val" id="macroFat">—</div>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--dimmer);margin-top:16px;">Estimates only — not medical advice. Consult a doctor or dietitian for personalised nutrition guidance.</p>
+      </div>
+    </section>
+
+    <!-- ===================== WELLNESS CHECK-IN ===================== -->
+    <section class="view" id="view-wellness">
+      <h2 class="section-title">Wellness Check-in</h2>
+      <p class="section-sub">A quick daily reflection — training harder means little without recovery and headspace to match.</p>
+
+      <div class="card">
+        <div class="card-head"><h3>How are you feeling today?</h3></div>
+        <div class="mood-row" id="moodRow">
+          <button class="mood-btn" data-mood="1"><span class="emoji">😞</span>Low</button>
+          <button class="mood-btn" data-mood="2"><span class="emoji">😐</span>Meh</button>
+          <button class="mood-btn active" data-mood="3"><span class="emoji">🙂</span>Okay</button>
+          <button class="mood-btn" data-mood="4"><span class="emoji">😄</span>Good</button>
+          <button class="mood-btn" data-mood="5"><span class="emoji">🤩</span>Great</button>
+        </div>
+
+        <div class="slider-row">
+          <div class="field-top"><span>Energy level</span><b id="energyVal">6/10</b></div>
+          <input type="range" id="energySlider" min="1" max="10" value="6">
+        </div>
+        <div class="slider-row">
+          <div class="field-top"><span>Sleep quality last night</span><b id="sleepVal">7/10</b></div>
+          <input type="range" id="sleepSlider" min="1" max="10" value="7">
+        </div>
+        <div class="slider-row">
+          <div class="field-top"><span>Stress level</span><b id="stressVal">4/10</b></div>
+          <input type="range" id="stressSlider" min="1" max="10" value="4">
+        </div>
+        <div class="field">
+          <label for="wellnessNote">Anything on your mind? (optional)</label>
+          <textarea id="wellnessNote" rows="3" placeholder="Quick note to your future self..."></textarea>
+        </div>
+        <button class="calc-btn" id="saveCheckinBtn">Save check-in</button>
+        <p style="font-size:11.5px;color:var(--dimmer);margin-top:14px;">This is a personal reflection tool, not a substitute for professional mental health support.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-head"><h3>Recent check-ins</h3></div>
+        <div id="checkinList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== MONTHLY REPORT ===================== -->
+    <section class="view" id="view-report">
+      <h2 class="section-title">Monthly Report</h2>
+      <p class="section-sub">August summary — how last month stacked up.</p>
+
+      <div class="grid-4">
+        <div class="card stat-card">
+          <div><div class="stat-label">Workouts logged</div><div class="stat-value">22</div><div class="stat-sub up">▲ 4 vs July</div></div>
+        </div>
+        <div class="card stat-card">
+          <div><div class="stat-label">Total steps</div><div class="stat-value">312k</div><div class="stat-sub up">▲ 8%</div></div>
+        </div>
+        <div class="card stat-card">
+          <div><div class="stat-label">Avg. sleep</div><div class="stat-value">6h 54m</div><div class="stat-sub down">▼ 18m</div></div>
+        </div>
+        <div class="card stat-card">
+          <div><div class="stat-label">Avg. form score</div><div class="stat-value">86%</div><div class="stat-sub up">▲ 6 pts</div></div>
+        </div>
+      </div>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head"><h3>Weekly workout count — last month</h3></div>
+          <div class="month-bars">
+            <div class="month-col"><div class="month-bar" style="height:55%"></div><div class="month-lbl">Week 1</div></div>
+            <div class="month-col"><div class="month-bar" style="height:70%"></div><div class="month-lbl">Week 2</div></div>
+            <div class="month-col"><div class="month-bar" style="height:48%"></div><div class="month-lbl">Week 3</div></div>
+            <div class="month-col"><div class="month-bar" style="height:90%"></div><div class="month-lbl">Week 4</div></div>
+          </div>
+          <p style="font-size:12.5px;color:var(--dim);margin-top:14px;">Consistency dipped in Week 3 (exam period) and recovered strongly in Week 4 — your longest active streak of the month was 9 days.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Badges earned</h3></div>
+          <div class="badge-row">
+            <div class="badge-pill"><span class="b-emoji">🔥</span>14-day streak</div>
+            <div class="badge-pill"><span class="b-emoji">🏆</span>Block C top 5</div>
+            <div class="badge-pill"><span class="b-emoji">🧘</span>Form score 90%+</div>
+            <div class="badge-pill"><span class="b-emoji">🥗</span>30 meals logged</div>
+          </div>
+          <div class="card-flat" style="margin-top:16px;">
+            <div class="stat-label" style="margin-bottom:6px;">Rank change</div>
+            <div style="font-size:13.5px;">Block C leaderboard: <b style="color:var(--teal)">#7 → #4</b> this month</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+
+<script>
+  // ---- Nav / view switching ----
+  const navItems = document.querySelectorAll('.navitem');
+  const views = document.querySelectorAll('.view');
+  function showView(name){
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  navItems.forEach(item => item.addEventListener('click', () => showView(item.dataset.view)));
+  window.showView = showView;
+
+  // ---- Notification bell ----
+  const bellBtn = document.getElementById('bellBtn');
+  const notifPanel = document.getElementById('notifPanel');
+  bellBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notifPanel.classList.toggle('open');
+  });
+  document.addEventListener('click', () => notifPanel.classList.remove('open'));
+
+  // ---- Feed / Leaderboard tabs ----
+  const pillTabs = document.querySelectorAll('.pill-tab');
+  pillTabs.forEach(tab => tab.addEventListener('click', () => {
+    pillTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-feed').classList.toggle('hidden', tab.dataset.tab !== 'feed');
+    document.getElementById('tab-leaderboard').classList.toggle('hidden', tab.dataset.tab !== 'leaderboard');
+  }));
+
+  // ---- Camera (posture check) — real pose detection ----
+  // Exposed globally so the Exercise Tracker section can read/render logged sessions.
+  window.OmniFitLog = { sessions: [] };
+
+  // Loads the TensorFlow.js + pose-detection libraries from a CDN. Some networks
+  // (corporate firewalls, certain ISPs/regions, ad-blockers) block one CDN but not
+  // another, so instead of relying on a single hard-coded <script src>, we try a
+  // short list of mirrors in order and only give up after all of them fail.
+  function loadScriptOnce(src, timeoutMs){
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-src="' + src + '"]');
+      if(existing){ resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.dataset.src = src;
+      const timer = setTimeout(() => {
+        s.remove();
+        reject(new Error('Timed out loading ' + src));
+      }, timeoutMs || 12000);
+      s.onload = () => { clearTimeout(timer); resolve(); };
+      s.onerror = () => { clearTimeout(timer); s.remove(); reject(new Error('Failed to load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadFirstAvailable(urls){
+    let lastErr;
+    for(const url of urls){
+      try{ await loadScriptOnce(url); return; }
+      catch(err){ lastErr = err; console.warn(err.message); }
+    }
+    throw lastErr || new Error('No sources available');
+  }
+
+  let poseLibsPromise = null;
+  function ensurePoseLibs(){
+    if(typeof tf !== 'undefined' && typeof poseDetection !== 'undefined'){
+      return Promise.resolve();
+    }
+    if(poseLibsPromise) return poseLibsPromise;
+    poseLibsPromise = (async () => {
+      if(typeof tf === 'undefined'){
+        await loadFirstAvailable([
+          'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js',
+          'https://unpkg.com/@tensorflow/tfjs@4.11.0/dist/tf.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.11.0/tf.min.js'
+        ]);
+      }
+      if(typeof poseDetection === 'undefined'){
+        await loadFirstAvailable([
+          'https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js',
+          'https://unpkg.com/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js'
+        ]);
+      }
+      if(typeof tf === 'undefined' || typeof poseDetection === 'undefined'){
+        throw new Error('Libraries loaded but did not attach to window as expected.');
+      }
+    })();
+    return poseLibsPromise.catch(err => { poseLibsPromise = null; throw err; });
+  }
+
+  (function posturePose(){
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const metricLabelEl = document.getElementById('metricLabel');
+    const metricValEl = document.getElementById('metricVal');
+    const angleValEl = document.getElementById('angleVal');
+    const feedbackEl = document.getElementById('feedback');
+    const startBtn = document.getElementById('startBtn');
+    const instructionEl = document.getElementById('instruction');
+    const pickerEl = document.getElementById('exercisePicker');
+    const stageEmpty = document.getElementById('stageEmpty');
+    const injuryTip = document.getElementById('injuryTip');
+    const injuryWarn = document.getElementById('injuryWarn');
+    const injuryWarnText = document.getElementById('injuryWarnText');
+    const logSessionBtn = document.getElementById('logSessionBtn');
+    const sessionLogList = document.getElementById('sessionLogList');
+    const soundAlertToggle = document.getElementById('soundAlertToggle');
+    const voiceAlertToggle = document.getElementById('voiceAlertToggle');
+
+    let detector, formIsBad = false;
+    let currentExercise = 'squat';
+    let running = false;
+    let sessionStartTime = null;
+
+    // ---- Audio + voice alerts, so the person doesn't have to walk up to the
+    // screen to know their form has broken down ----
+    let audioCtx = null;
+    let lastAlertTime = 0;
+    let lastAlertMessage = '';
+    let alertRepeatCount = 0;
+    const ALERT_REPEAT_MS = 6000; // speak once, then wait at least 5-6s — only repeat if still not fixed
+
+    function beep(){
+      if(!soundAlertToggle.checked) return;
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.22, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.28);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+        // second, slightly lower-pitched blip so it reads as an "alert" pattern, not a single click
+        setTimeout(() => {
+          if(!audioCtx) return;
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.type = 'square';
+          osc2.frequency.value = 660;
+          gain2.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.22, audioCtx.currentTime + 0.02);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.28);
+          osc2.connect(gain2).connect(audioCtx.destination);
+          osc2.start();
+          osc2.stop(audioCtx.currentTime + 0.3);
+        }, 160);
+      }catch(err){ console.warn('Beep failed:', err); }
+    }
+
+    function speakAlert(message){
+      if(!voiceAlertToggle.checked) return;
+      if(!('speechSynthesis' in window)) return;
+      try{
+        window.speechSynthesis.cancel(); // don't queue up stale cues
+        const utter = new SpeechSynthesisUtterance(message);
+        utter.rate = 1.02;
+        utter.pitch = 1;
+        utter.volume = 1;
+        window.speechSynthesis.speak(utter);
+      }catch(err){ console.warn('Speech alert failed:', err); }
+    }
+
+    // Speaks the rep number out loud the instant a rep is completed ("1", "2", "3"...)
+    // so the person can hear their count without looking at the screen.
+    function speakRepCount(n){
+      if(!voiceAlertToggle.checked) return;
+      if(!('speechSynthesis' in window)) return;
+      try{
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(String(n));
+        utter.rate = 1.05;
+        utter.pitch = 1;
+        utter.volume = 1;
+        window.speechSynthesis.speak(utter);
+      }catch(err){ console.warn('Rep count speech failed:', err); }
+      // A fresh rep just landed cleanly, so give the bad-form reminder a full
+      // fresh window before it can speak again (avoids talking over the count).
+      lastAlertTime = performance.now();
+    }
+
+    // Called whenever form is currently bad, with a short message describing the fix.
+    // Throttled so it beeps/speaks once immediately on a new issue, then waits at
+    // least ALERT_REPEAT_MS before reminding again — and rephrases the reminder each
+    // time instead of repeating the exact same line, so it doesn't sound like a
+    // stuck alarm ("Move into the camera view!!" over and over).
+    const REPEAT_PHRASINGS = [
+      (m) => m, // first mention: the plain instruction
+      (m) => "Still — " + lowerFirstWord(m),
+      (m) => "I still need you to " + toActionPhrase(m),
+      (m) => "Come on — " + lowerFirstWord(m)
+    ];
+    function lowerFirstWord(m){ return m.charAt(0).toLowerCase() + m.slice(1); }
+    function toActionPhrase(m){
+      // best-effort: turn "Go lower" -> "go lower", "Move into the camera view" -> "move into the camera view"
+      return m.charAt(0).toLowerCase() + m.slice(1).replace(/!+$/,'');
+    }
+    function alertBadForm(message){
+      const now = performance.now();
+      const isNewMessage = message !== lastAlertMessage;
+      if(isNewMessage){
+        alertRepeatCount = 0;
+      }
+      if(isNewMessage || now - lastAlertTime > ALERT_REPEAT_MS){
+        const phrasing = REPEAT_PHRASINGS[Math.min(alertRepeatCount, REPEAT_PHRASINGS.length - 1)];
+        beep();
+        speakAlert(phrasing(message));
+        lastAlertTime = now;
+        lastAlertMessage = message;
+        alertRepeatCount++;
+      }
+    }
+    function clearAlertState(){
+      lastAlertMessage = '';
+      alertRepeatCount = 0;
+    }
+
+    // Speaks the exercise's correct-form instructions out loud whenever the person
+    // switches/selects an exercise, so they get the cue by voice, not just on-screen text.
+    function speakInstruction(text){
+      if(!voiceAlertToggle.checked) return;
+      if(!('speechSynthesis' in window)) return;
+      try{
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1.0;
+        utter.pitch = 1;
+        utter.volume = 1;
+        window.speechSynthesis.speak(utter);
+      }catch(err){ console.warn('Instruction speech failed:', err); }
+    }
+
+    // Kick off loading the pose libraries in the background as soon as this section's
+    // script runs, so they're often already cached by the time the user hits Start.
+    ensurePoseLibs().catch(() => { /* surfaced again, with a clear message, on Start click */ });
+
+    const EXERCISES = {
+      squat: {
+        label: 'Squat', type: 'reps',
+        joints: ['right_hip', 'right_knee', 'right_ankle'],
+        downThreshold: 100, upThreshold: 160, goodDepth: 95,
+        instruction: 'Stand side-on to the camera. Squat down until thighs are near parallel, then stand back up.',
+        injuryTip: 'Keep your knees tracking over your toes and avoid letting them cave inward — this protects the ACL and MCL. Keep your chest up and lower back neutral to avoid lumbar strain.',
+        caloriesPerRep: 0.35
+      },
+      pushup: {
+        label: 'Push-up', type: 'reps',
+        joints: ['right_shoulder', 'right_elbow', 'right_wrist'],
+        downThreshold: 95, upThreshold: 160, goodDepth: 80,
+        instruction: 'Side-on view. Lower your chest close to the floor, then push back up.',
+        injuryTip: 'Keep your core braced and hips in line with your shoulders — sagging hips load the lower back. Keep elbows at roughly 45°, not flared, to protect the shoulder joint.',
+        caloriesPerRep: 0.4
+      },
+      plank: {
+        label: 'Plank', type: 'hold',
+        joints: ['right_shoulder', 'right_hip', 'right_ankle'],
+        goodRange: [160, 185],
+        badMessage: 'Straighten your back — hips sagging or too high',
+        instruction: 'Side-on view. Hold a straight line from shoulders to ankles. Timer runs while your form is correct.',
+        injuryTip: 'A straight line from shoulders to ankles protects your lower back. Sagging hips overload the lumbar spine; piking too high shifts load off your core and onto your shoulders.',
+        caloriesPerSecond: 0.06
+      },
+      lunge: {
+        label: 'Lunge', type: 'reps',
+        joints: ['right_hip', 'right_knee', 'right_ankle'],
+        downThreshold: 100, upThreshold: 160, goodDepth: 95,
+        instruction: 'Stand side-on to the camera. Step into a lunge, bending your front knee toward 90°, then push back up to standing.',
+        injuryTip: 'Keep your front knee tracking over your ankle rather than pushing past your toes, and keep your torso upright — this protects the knee joint and lower back.',
+        caloriesPerRep: 0.4
+      },
+      bicepcurl: {
+        label: 'Bicep Curl', type: 'reps',
+        joints: ['right_shoulder', 'right_elbow', 'right_wrist'],
+        downThreshold: 55, upThreshold: 150, goodDepth: 45,
+        instruction: 'Stand side-on to the camera, arm relaxed by your side. Curl your hand up toward your shoulder, then lower with control.',
+        injuryTip: 'Keep your elbow tucked close to your body and avoid swinging your back or shoulder to generate momentum — that shifts strain onto the lower back and shoulder joint.',
+        caloriesPerRep: 0.25
+      },
+      sideplank: {
+        label: 'Side Plank', type: 'hold',
+        joints: ['right_shoulder', 'right_hip', 'right_ankle'],
+        goodRange: [160, 185],
+        badMessage: 'Lift your hips — keep a straight line from shoulder to ankle',
+        instruction: 'Lie on your side, side-on to camera. Prop up on your forearm or hand and lift your hips so your body forms a straight line.',
+        injuryTip: 'Keep your hips lifted and stacked rather than sagging toward the floor — this protects the lower back and works the obliques without overloading the shoulder.',
+        caloriesPerSecond: 0.055
+      }
+    };
+
+    let repStage = 'up', reps = 0, holdSeconds = 0, lastFrameTime = null;
+
+    function resetState(){
+      repStage = 'up'; reps = 0; holdSeconds = 0; lastFrameTime = null;
+      metricValEl.textContent = '0';
+      angleValEl.textContent = '--';
+      feedbackEl.textContent = '--';
+      feedbackEl.className = '';
+      formIsBad = false;
+      injuryWarn.classList.add('hidden');
+      logSessionBtn.disabled = true;
+      clearAlertState();
+      if('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+
+    function applyExercise(ex, announce){
+      currentExercise = ex;
+      const cfg = EXERCISES[ex];
+      metricLabelEl.textContent = cfg.type === 'reps' ? 'Reps' : 'Hold (sec)';
+      instructionEl.textContent = cfg.instruction;
+      injuryTip.textContent = cfg.injuryTip;
+      resetState();
+      document.querySelectorAll('.pose-btn').forEach(b => b.classList.toggle('active', b.dataset.ex === ex));
+      if(announce) speakInstruction(cfg.label + ' selected. ' + cfg.instruction);
+    }
+
+    pickerEl.addEventListener('click', (e) => {
+      if(e.target.classList.contains('pose-btn')) applyExercise(e.target.dataset.ex, true);
+    });
+    applyExercise('squat');
+
+    function angleBetween(a, b, c){
+      const ab = [a[0]-b[0], a[1]-b[1]];
+      const cb = [c[0]-b[0], c[1]-b[1]];
+      const dot = ab[0]*cb[0] + ab[1]*cb[1];
+      const magAB = Math.hypot(ab[0], ab[1]);
+      const magCB = Math.hypot(cb[0], cb[1]);
+      const cosAngle = dot / (magAB * magCB);
+      return Math.acos(Math.min(1, Math.max(-1, cosAngle))) * (180 / Math.PI);
+    }
+    function getPoint(keypoints, name){
+      const kp = keypoints.find(k => k.name === name);
+      if(!kp || kp.score < 0.3) return null;
+      return [kp.x, kp.y];
+    }
+
+    function showInjuryWarn(text){
+      injuryWarnText.textContent = text;
+      injuryWarn.classList.remove('hidden');
+    }
+    function hideInjuryWarn(){ injuryWarn.classList.add('hidden'); }
+
+    async function setup(){
+      statusEl.textContent = 'Loading pose detection library...';
+
+      try{
+        await ensurePoseLibs();
+      }catch(err){
+        console.error('All library sources failed:', err);
+        statusEl.innerHTML = 'Could not load the pose-detection library from any source (jsdelivr, unpkg, cdnjs). ' +
+          'This usually means a firewall, ad-blocker, or VPN on this network is blocking those CDN domains. ' +
+          'Try disabling any ad-blocker for this page, switching network/VPN, or opening this file in a different browser, then click Start camera again.';
+        startBtn.disabled = false; startBtn.textContent = 'Retry';
+        return;
+      }
+
+      statusEl.textContent = 'Loading pose model...';
+
+      if(!detector){
+        try{
+          try{
+            await tf.setBackend('webgl');
+          }catch(backendErr){
+            console.warn('WebGL backend unavailable, falling back to CPU:', backendErr);
+            await tf.setBackend('cpu');
+          }
+          await tf.ready();
+
+          // The library (tf.js / pose-detection) loads fine from the CDNs above, but
+          // creating the detector triggers a SEPARATE fetch of the model weights from
+          // Google's model hosting (tfhub.dev / storage.googleapis.com / kaggle.com).
+          // That's a different domain than the CDNs, so it can fail even when the
+          // library itself loaded — and it can also fail transiently. Retry a couple
+          // of times with a short backoff before giving up.
+          let lastModelErr;
+          for(let attempt = 1; attempt <= 3; attempt++){
+            try{
+              detector = await poseDetection.createDetector(
+                poseDetection.SupportedModels.MoveNet,
+                { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+              );
+              lastModelErr = null;
+              break;
+            }catch(modelErr){
+              lastModelErr = modelErr;
+              console.warn('Model load attempt ' + attempt + ' failed:', modelErr);
+              if(attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
+            }
+          }
+          if(lastModelErr) throw lastModelErr;
+        }catch(err){
+          console.error('Pose model failed to load:', err);
+          if(!navigator.onLine){
+            statusEl.textContent = 'You appear to be offline. Reconnect to the internet and try again.';
+          } else {
+            statusEl.innerHTML = 'Could not download the pose model weights (this is a separate download from the library, ' +
+              'fetched from tfhub.dev / storage.googleapis.com / kaggle.com). This usually means a firewall, ad-blocker, ' +
+              'VPN, or corporate/school network is blocking those domains. Try disabling any ad-blocker for this page, ' +
+              'switching network or VPN, or allow-listing those domains, then click Retry.';
+          }
+          startBtn.disabled = false; startBtn.textContent = 'Retry';
+          return;
+        }
+      }
+
+      let stream;
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+      }catch(err){
+        let msg = "Couldn't access the camera.";
+        if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msg = "Camera permission denied — allow camera access in your browser's site settings and try again.";
+        else if(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = "No camera was found on this device.";
+        else if(err.name === 'NotReadableError') msg = "The camera is already in use by another app.";
+        statusEl.textContent = msg;
+        startBtn.disabled = false; startBtn.textContent = 'Start camera';
+        return;
+      }
+
+      video.srcObject = stream;
+      await new Promise(res => video.onloadedmetadata = res);
+      video.play();
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      stageEmpty.classList.add('hidden');
+
+      statusEl.textContent = 'Model loaded. Detecting pose...';
+      running = true;
+      sessionStartTime = performance.now();
+      requestAnimationFrame(detectLoop);
+    }
+
+    async function detectLoop(){
+      if(!running) return;
+      const now = performance.now();
+      try{
+        if(detector && video.readyState === 4){
+          const poses = await detector.estimatePoses(video, { flipHorizontal: false });
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if(poses.length > 0 && poses[0].keypoints){
+            const kp = poses[0].keypoints;
+            const cfg = EXERCISES[currentExercise];
+            if(cfg.type === 'reps') handleRepsExercise(kp, cfg);
+            else handleHoldExercise(kp, cfg, now);
+            drawSkeleton(kp);
+            drawBanner();
+            logSessionBtn.disabled = (reps === 0 && holdSeconds === 0);
+          } else {
+            feedbackEl.textContent = 'No person detected';
+            feedbackEl.className = 'bad';
+            formIsBad = true;
+            alertBadForm('Move into the camera view');
+          }
+        }
+      }catch(err){
+        // Don't let a single bad frame (e.g. a transient WebGL hiccup) kill the whole
+        // detection loop — log it, skip this frame, and keep tracking on the next one.
+        console.warn('Pose detection frame error:', err);
+      }
+      lastFrameTime = now;
+      if(running) requestAnimationFrame(detectLoop);
+    }
+
+    function handleRepsExercise(kp, cfg){
+      const [j1, j2, j3] = cfg.joints;
+      const a = getPoint(kp, j1), b = getPoint(kp, j2), c = getPoint(kp, j3);
+      if(!a || !b || !c){
+        feedbackEl.textContent = 'Move into camera view'; feedbackEl.className = 'bad'; formIsBad = true;
+        alertBadForm('Move into the camera view');
+        return;
+      }
+      const angle = angleBetween(a, b, c);
+      angleValEl.textContent = Math.round(angle) + '°';
+
+      if(angle > 155){
+        feedbackEl.textContent = 'Ready'; feedbackEl.className = ''; formIsBad = false; hideInjuryWarn(); clearAlertState();
+      } else if(angle <= cfg.goodDepth){
+        feedbackEl.textContent = 'Good depth'; feedbackEl.className = 'good'; formIsBad = false; hideInjuryWarn(); clearAlertState();
+      } else {
+        feedbackEl.textContent = 'Go lower!'; feedbackEl.className = 'bad'; formIsBad = true;
+        showInjuryWarn('Partial reps under load can stress joints without building strength — control the full range.');
+        alertBadForm('Go lower');
+      }
+      if(repStage === 'up' && angle < cfg.downThreshold) repStage = 'down';
+      if(repStage === 'down' && angle > cfg.upThreshold){
+        repStage = 'up'; reps++; metricValEl.textContent = reps;
+        speakRepCount(reps);
+      }
+    }
+
+    function handleHoldExercise(kp, cfg, now){
+      const [j1, j2, j3] = cfg.joints;
+      const a = getPoint(kp, j1), b = getPoint(kp, j2), c = getPoint(kp, j3);
+      if(!a || !b || !c){
+        feedbackEl.textContent = 'Move into camera view'; feedbackEl.className = 'bad'; formIsBad = true;
+        alertBadForm('Move into the camera view');
+        return;
+      }
+      const angle = angleBetween(a, b, c);
+      angleValEl.textContent = Math.round(angle) + '°';
+      const [lo, hi] = cfg.goodRange;
+      updateHoldTimer(angle >= lo && angle <= hi, cfg.badMessage, now);
+    }
+
+    function updateHoldTimer(good, badMessage, now){
+      if(good){
+        feedbackEl.textContent = 'Holding correctly'; feedbackEl.className = 'good'; formIsBad = false; hideInjuryWarn(); clearAlertState();
+        if(lastFrameTime) holdSeconds += (now - lastFrameTime) / 1000;
+        metricValEl.textContent = holdSeconds.toFixed(1);
+      } else {
+        feedbackEl.textContent = badMessage; feedbackEl.className = 'bad'; formIsBad = true;
+        showInjuryWarn(EXERCISES[currentExercise].injuryTip);
+        alertBadForm(badMessage);
+      }
+    }
+
+    function drawSkeleton(keypoints){
+      const pairs = [
+        ['left_shoulder','right_shoulder'],['left_hip','right_hip'],
+        ['left_shoulder','left_hip'],['right_shoulder','right_hip'],
+        ['left_hip','left_knee'],['left_knee','left_ankle'],
+        ['right_hip','right_knee'],['right_knee','right_ankle'],
+        ['left_shoulder','left_elbow'],['left_elbow','left_wrist'],
+        ['right_shoulder','right_elbow'],['right_elbow','right_wrist']
+      ];
+      ctx.strokeStyle = formIsBad ? '#FF4D6D' : '#33D6B8';
+      ctx.lineWidth = 4;
+      pairs.forEach(([a, b]) => {
+        const p1 = getPoint(keypoints, a), p2 = getPoint(keypoints, b);
+        if(p1 && p2){ ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke(); }
+      });
+      ctx.fillStyle = formIsBad ? '#FF4D6D' : '#FFC14D';
+      keypoints.forEach(kp => {
+        if(kp.score > 0.3){ ctx.beginPath(); ctx.arc(kp.x, kp.y, 5, 0, 2*Math.PI); ctx.fill(); }
+      });
+    }
+
+    function drawBanner(){
+      if(!formIsBad) return;
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.fillStyle = 'rgba(255, 77, 109, 0.85)';
+      ctx.fillRect(-canvas.width, 0, canvas.width, 36);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Inter, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠ FIX YOUR FORM', -canvas.width/2, 24);
+      ctx.restore();
+    }
+
+    function renderSessionLog(){
+      const todaySessions = window.OmniFitLog.sessions;
+      if(todaySessions.length === 0){
+        sessionLogList.innerHTML = '<div class="empty-note">No sessions logged yet — finish a set and log it above.</div>';
+        return;
+      }
+      sessionLogList.innerHTML = todaySessions.map(s => `
+        <div class="session-row">
+          <span class="s-name">${s.name}</span>
+          <span class="s-meta">${s.metric} · ${s.durationMin} min · ${s.kcal} kcal</span>
+        </div>`).join('');
+    }
+
+    logSessionBtn.addEventListener('click', () => {
+      const cfg = EXERCISES[currentExercise];
+      const durationMin = sessionStartTime ? Math.max(1, Math.round((performance.now() - sessionStartTime)/60000)) : 1;
+      let kcal, metricText;
+      if(cfg.type === 'reps'){
+        kcal = Math.round(reps * cfg.caloriesPerRep * 10);
+        metricText = reps + ' reps';
+      } else {
+        kcal = Math.round(holdSeconds * cfg.caloriesPerSecond);
+        metricText = holdSeconds.toFixed(1) + 's hold';
+      }
+      const entry = { name: cfg.label, metric: metricText, durationMin, kcal, source: 'AI posture check', time: new Date() };
+      window.OmniFitLog.sessions.push(entry);
+      renderSessionLog();
+      if(window.renderExerciseTracker) window.renderExerciseTracker();
+      logSessionBtn.disabled = true;
+      logSessionBtn.textContent = 'Logged ✓';
+      setTimeout(() => { logSessionBtn.textContent = 'Log this session to Exercise Tracker'; }, 1800);
+    });
+
+    startBtn.addEventListener('click', () => {
+      startBtn.disabled = true;
+      startBtn.textContent = 'Loading…';
+      setup();
+    });
+
+    // pause camera when navigating away from this tab
+    navItems.forEach(item => item.addEventListener('click', () => {
+      if(item.dataset.view !== 'workout' && video.srcObject){
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+        running = false;
+        stageEmpty.classList.remove('hidden');
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start camera';
+        statusEl.textContent = 'Session paused. Start again to resume pose tracking.';
+        clearAlertState();
+        if('speechSynthesis' in window) window.speechSynthesis.cancel();
+      }
+    }));
+  })();
+
+  // ---- Exercise Tracker ----
+  (function exerciseTracker(){
+    const list = document.getElementById('exerciseLogList');
+    const totals = document.getElementById('exerciseTotals');
+    const addBtn = document.getElementById('addExerciseBtn');
+    const nameInput = document.getElementById('exNameInput');
+    const durationInput = document.getElementById('exDurationInput');
+    const caloriesInput = document.getElementById('exCaloriesInput');
+    const intensityInput = document.getElementById('exIntensityInput');
+    const kcalPerMin = { light: 4, moderate: 7, vigorous: 10 };
+
+    function render(){
+      const entries = window.OmniFitLog.sessions;
+      if(entries.length === 0){
+        list.innerHTML = '<div class="empty-note">Nothing logged yet today.</div>';
+      } else {
+        list.innerHTML = entries.map(e => `
+          <div class="session-row">
+            <span class="s-name">${e.name}${e.source ? ' <span style="color:var(--dimmer);font-weight:400;font-size:11.5px;">· ' + e.source + '</span>' : ''}</span>
+            <span class="s-meta">${e.durationMin} min · ${e.kcal} kcal</span>
+          </div>`).join('');
+      }
+      const totalMin = entries.reduce((s,e) => s + e.durationMin, 0);
+      const totalKcal = entries.reduce((s,e) => s + e.kcal, 0);
+      totals.textContent = totalMin + ' min · ' + totalKcal + ' kcal';
+    }
+    window.renderExerciseTracker = render;
+
+    addBtn.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      const duration = parseInt(durationInput.value, 10);
+      if(!name || !duration){ nameInput.focus(); return; }
+      const intensity = intensityInput.value;
+      const kcal = parseInt(caloriesInput.value, 10) || Math.round(duration * kcalPerMin[intensity]);
+      window.OmniFitLog.sessions.push({ name, durationMin: duration, kcal, source: 'manual entry' });
+      nameInput.value = ''; durationInput.value = ''; caloriesInput.value = '';
+      render();
+    });
+
+    render();
+  })();
+
+  // ---- Step Tracker ----
+  (function stepTracker(){
+    let steps = 6200;
+    const goal = 10000;
+    const stepRing = document.getElementById('stepRing');
+    const stepCountDisplay = document.getElementById('stepCountDisplay');
+    const stepDistance = document.getElementById('stepDistance');
+    const stepCalories = document.getElementById('stepCalories');
+    const todayStepBar = document.getElementById('todayStepBar');
+
+    function render(){
+      const pct = Math.min(100, Math.round((steps/goal)*100));
+      stepRing.style.setProperty('--step-pct', pct);
+      stepCountDisplay.textContent = steps.toLocaleString();
+      stepDistance.textContent = (steps * 0.0007).toFixed(1) + ' km';
+      stepCalories.textContent = Math.round(steps * 0.04) + ' kcal';
+      todayStepBar.style.height = pct + '%';
+    }
+    document.getElementById('addStepsBtn').addEventListener('click', () => { steps += 500; render(); });
+    document.getElementById('resetStepsBtn').addEventListener('click', () => { steps = 0; render(); });
+    render();
+  })();
+
+  // ---- Calorie Calculator ----
+  (function calorieCalculator(){
+    let sex = 'male', goal = 0;
+    document.querySelectorAll('.seg-btn[data-sex]').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg-btn[data-sex]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); sex = btn.dataset.sex;
+    }));
+    document.querySelectorAll('.seg-btn[data-goal]').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg-btn[data-goal]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); goal = parseInt(btn.dataset.goal, 10);
+    }));
+    document.getElementById('calcCalorieBtn').addEventListener('click', () => {
+      const age = parseFloat(document.getElementById('ageInput').value) || 21;
+      const height = parseFloat(document.getElementById('heightInput').value) || 170;
+      const weight = parseFloat(document.getElementById('weightInput').value) || 65;
+      const activity = parseFloat(document.getElementById('activityInput').value) || 1.375;
+      const bmr = sex === 'male'
+        ? (10*weight + 6.25*height - 5*age + 5)
+        : (10*weight + 6.25*height - 5*age - 161);
+      const tdee = bmr * activity;
+      const target = Math.max(1200, tdee + goal);
+      document.getElementById('bmrResult').textContent = Math.round(bmr).toLocaleString();
+      document.getElementById('tdeeResult').textContent = Math.round(tdee).toLocaleString();
+      document.getElementById('targetResult').textContent = Math.round(target).toLocaleString();
+
+      const proteinKcal = target * 0.30, carbsKcal = target * 0.40, fatKcal = target * 0.30;
+      document.getElementById('macroProtein').textContent = Math.round(proteinKcal/4) + 'g';
+      document.getElementById('macroCarbs').textContent = Math.round(carbsKcal/4) + 'g';
+      document.getElementById('macroFat').textContent = Math.round(fatKcal/9) + 'g';
+      document.getElementById('macroSuggestion').style.display = 'block';
+    });
+  })();
+
+  // ---- Wellness Check-in ----
+  (function wellness(){
+    let mood = 3;
+    const checkins = [];
+    const emojiMap = {1:'😞',2:'😐',3:'🙂',4:'😄',5:'🤩'};
+
+    document.querySelectorAll('.mood-btn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); mood = parseInt(btn.dataset.mood, 10);
+    }));
+
+    const energySlider = document.getElementById('energySlider');
+    const sleepSlider = document.getElementById('sleepSlider');
+    const stressSlider = document.getElementById('stressSlider');
+    energySlider.addEventListener('input', () => document.getElementById('energyVal').textContent = energySlider.value + '/10');
+    sleepSlider.addEventListener('input', () => document.getElementById('sleepVal').textContent = sleepSlider.value + '/10');
+    stressSlider.addEventListener('input', () => document.getElementById('stressVal').textContent = stressSlider.value + '/10');
+
+    function render(){
+      const list = document.getElementById('checkinList');
+      if(checkins.length === 0){
+        list.innerHTML = '<div class="empty-note">No check-ins yet today.</div>';
+        return;
+      }
+      list.innerHTML = checkins.slice().reverse().map(c => `
+        <div class="checkin-row">
+          <div class="checkin-emoji">${emojiMap[c.mood]}</div>
+          <div>
+            <div class="checkin-meta">${c.time} · Energy ${c.energy}/10 · Sleep ${c.sleep}/10 · Stress ${c.stress}/10</div>
+            ${c.note ? '<div class="checkin-note">' + c.note + '</div>' : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    document.getElementById('saveCheckinBtn').addEventListener('click', () => {
+      const noteEl = document.getElementById('wellnessNote');
+      checkins.push({
+        mood, energy: energySlider.value, sleep: sleepSlider.value, stress: stressSlider.value,
+        note: noteEl.value.trim(),
+        time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+      });
+      noteEl.value = '';
+      render();
+    });
+    render();
+  })();
+
+  // ---- Ingredient chips ----
+  document.querySelectorAll('.ing-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+  });
+  document.getElementById('genBtn').addEventListener('click', () => {
+    document.getElementById('recipeGrid').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+</script>
+</body>
+</html>
